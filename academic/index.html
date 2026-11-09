@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dual-Campus Canvas Lock Screen &amp; Dashboard</title>
+<!-- Only external dependency: ical.js parser (no proxies, no trackers, no Tailwind CDN). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.5.0/ical.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#f1f5f9;
+ background:radial-gradient(1200px 600px at 20% -10%,rgba(79,70,229,.35),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(8,145,178,.25),transparent 60%),#020617}
+.wrap{max-width:80rem;margin:0 auto;padding:1rem}
+@media(min-width:768px){.wrap{padding:2rem}}
+.glass{background:rgba(15,23,42,.75);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:1rem}
+header.glass{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;margin-bottom:1.5rem}
+h1{font-size:1.125rem;margin:0}
+.muted{color:#94a3b8}.small{font-size:.8rem}.tiny{font-size:.7rem}
+.btn{font:inherit;font-size:.8rem;font-weight:600;border:0;border-radius:.75rem;padding:.6rem 1rem;cursor:pointer;color:#fff;background:#4f46e5;min-height:44px}
+.btn:hover{background:#6366f1}.btn.alt{background:#1e293b}.btn.alt:hover{background:#334155}.btn.danger{background:#7f1d1d}.btn.danger:hover{background:#991b1b}
+.btn:disabled{opacity:.5;cursor:wait}
+:focus-visible{outline:3px solid #a5b4fc;outline-offset:2px}
+.clock{text-align:center;margin:1.5rem 0}
+.clock .t{font-size:3rem;font-weight:800;margin:0;letter-spacing:-.02em}
+@media(min-width:768px){.clock .t{font-size:4.5rem}}
+.clock .d{color:#a5b4fc;margin:.25rem 0 0}
+.hero{padding:1.5rem;margin-bottom:1.5rem;text-align:center;border-radius:1.5rem;border-color:rgba(99,102,241,.25)}
+.badge{display:inline-block;padding:.2rem .7rem;border-radius:999px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;background:#1e293b;color:#cbd5e1;border:1px solid #334155}
+.badge.hartnell{background:rgba(245,158,11,.2);color:#fcd34d;border-color:rgba(245,158,11,.3)}
+.badge.csumb{background:rgba(6,182,212,.2);color:#67e8f9;border-color:rgba(6,182,212,.3)}
+.badge.stale{background:rgba(244,63,94,.15);color:#fda4af;border-color:rgba(244,63,94,.3)}
+.hero h2{font-size:1.6rem;margin:1rem 0 .5rem}@media(min-width:768px){.hero h2{font-size:2.2rem}}
+.timer{display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;max-width:28rem;margin:1rem auto 0}
+.timer div{background:rgba(15,23,42,.8);border:1px solid #1e293b;border-radius:1rem;padding:.75rem}
+.timer b{display:block;font-size:1.8rem;font-weight:900;color:#818cf8}.timer div:last-child b{color:#fb7185}
+.timer span{font-size:.7rem;text-transform:uppercase;color:#94a3b8;font-weight:600}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;margin-bottom:1rem}
+.filters{display:flex;gap:.4rem;flex-wrap:wrap}
+.filters button[aria-pressed="true"]{background:#4f46e5}
+.grid{display:grid;grid-template-columns:1fr;gap:1rem;list-style:none;padding:0;margin:0}
+@media(min-width:768px){.grid{grid-template-columns:1fr 1fr}}@media(min-width:1024px){.grid{grid-template-columns:1fr 1fr 1fr}}
+.card{width:100%;text-align:left;font:inherit;color:inherit;padding:1rem;cursor:pointer;min-height:44px}
+.card:hover,.card[aria-current="true"]{border-color:#64748b}
+.card .row{display:flex;justify-content:space-between;gap:.5rem;align-items:flex-start;margin-bottom:.5rem}
+.card h3{font-size:.95rem;margin:0 0 .25rem}
+.sources{display:grid;gap:.75rem;grid-template-columns:1fr;margin-bottom:1.5rem}@media(min-width:768px){.sources{grid-template-columns:1fr 1fr}}
+.src{padding:1rem}.src h3{margin:0 0 .4rem;font-size:.95rem}
+.src.err{border-color:rgba(244,63,94,.5)}
+.detail{padding:1rem;margin-bottom:1.5rem;white-space:pre-wrap;word-break:break-word}
+dialog{color:inherit;background:rgba(15,23,42,.97);border:1px solid rgba(255,255,255,.15);border-radius:1.5rem;max-width:34rem;width:calc(100% - 2rem);max-height:90vh;padding:1.5rem}
+dialog::backdrop{background:rgba(2,6,23,.8)}
+label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;color:#cbd5e1;margin:.9rem 0 .3rem}
+input[type=url],input[type=file]{width:100%;font:inherit;font-size:.8rem;color:#e2e8f0;background:#0f172a;border:1px solid #334155;border-radius:.75rem;padding:.55rem}
+.warn{background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#fde68a;border-radius:.75rem;padding:.6rem;font-size:.75rem}
+.actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.5rem;margin-top:1rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header class="glass">
+  <div><h1>🎓 Multi-Campus Canvas Hub</h1>
+   <p id="sync-status" class="tiny muted" role="status" aria-live="polite">Starting…</p></div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+   <button type="button" class="btn" id="open-modal" aria-haspopup="dialog">⚙️ Manage ICS Sources</button>
+   <button type="button" class="btn danger" id="clear-data">Clear saved data</button>
+  </div>
+ </header>
+
+ <div class="clock" aria-hidden="true"><p class="t" id="live-time">--:--:--</p><p class="d" id="live-date"></p></div>
+
+ <section id="hero" class="glass hero" aria-labelledby="hero-title">
+  <span id="hero-campus" class="badge">No data</span>
+  <h2 id="hero-title">No calendar data loaded</h2>
+  <p id="hero-course" class="small muted">Upload your Hartnell and CSUMB .ics files under “Manage ICS Sources”.</p>
+  <p id="hero-sr" class="sr"></p>
+  <div class="timer" aria-hidden="true">
+   <div><b id="hero-days">--</b><span>Days</span></div><div><b id="hero-hours">--</b><span>Hours</span></div>
+   <div><b id="hero-mins">--</b><span>Mins</span></div><div><b id="hero-secs">--</b><span>Secs</span></div>
+  </div>
+  <p id="hero-note" class="tiny muted"></p>
+ </section>
+
+ <section class="sources" id="source-panels" aria-label="Calendar sources"></section>
+
+ <div class="toolbar">
+  <h2 class="small muted" style="margin:0;text-transform:uppercase;letter-spacing:.05em" id="list-heading">Merged Academic Deadlines</h2>
+  <div class="filters" role="group" aria-label="Filter by campus">
+   <button type="button" class="btn alt" data-filter="all" aria-pressed="true">All</button>
+   <button type="button" class="btn alt" data-filter="hartnell" aria-pressed="false">Hartnell</button>
+   <button type="button" class="btn alt" data-filter="csumb" aria-pressed="false">CSUMB</button>
+  </div>
+ </div>
+ <p id="count-line" class="small muted"></p>
+ <section id="detail" class="glass detail" hidden aria-live="polite" aria-label="Selected event details"></section>
+ <ul id="events-grid" class="grid" aria-labelledby="list-heading"></ul>
+ <p class="tiny muted" style="margin-top:2rem">All-day Canvas items have no due time in the feed; they are shown as date-only and kept “upcoming” until 11:59 PM Pacific on that date (countdown target only). Times shown in America/Los_Angeles.</p>
+</div>
+
+<dialog id="config-modal" aria-labelledby="modal-title">
+ <div style="display:flex;justify-content:space-between;align-items:center">
+  <h2 id="modal-title" style="margin:0;font-size:1.1rem">Manage Calendar Sources</h2>
+  <button type="button" class="btn alt" id="close-x" aria-label="Close">✕</button>
+ </div>
+ <p class="small muted">Recommended: upload files. They are parsed only in this browser and never sent anywhere.</p>
+ <label for="file-hartnell">Hartnell .ics file</label>
+ <input type="file" id="file-hartnell" accept=".ics,text/calendar">
+ <label for="file-csumb">CSUMB .ics file</label>
+ <input type="file" id="file-csumb" accept=".ics,text/calendar">
+ <p class="tiny muted">Uploading one campus replaces only that campus; the other is kept.</p>
+
+ <label for="url-hartnell">Optional: Hartnell direct HTTPS feed URL</label>
+ <input type="url" id="url-hartnell" autocomplete="off" spellcheck="false" placeholder="https://…/feeds/calendars/….ics">
+ <label for="url-csumb">Optional: CSUMB direct HTTPS feed URL</label>
+ <input type="url" id="url-csumb" autocomplete="off" spellcheck="false" placeholder="https://…/feeds/calendars/….ics">
+ <p class="warn">Feed URLs contain a private token: never paste them into a published page. They are not saved. Direct fetch only works if the calendar server allows cross-origin (CORS) requests, and Google Sites embeds may block it. No proxy is used, so if it fails, download the .ics and upload it instead.</p>
+ <div class="actions">
+  <button type="button" class="btn alt" id="cancel">Close</button>
+  <button type="button" class="btn" id="sync-urls">Fetch entered URLs</button>
+ </div>
+</dialog>
+
+<script id="alh-core">
+// ===== Pure logic (no DOM). Tested by alh-test/run-tests.js =====
+var ALH = (function(){
+  var TZ = 'America/Los_Angeles';
+  var CACHE_KEY = 'alh_cache_v2', CACHE_VERSION = 2, LEGACY_KEY = 'merged_canvas_events';
+  var SOURCES = { hartnell:'Hartnell', csumb:'CSUMB' };
+  var RECUR_PAST_DAYS = 1, RECUR_FUTURE_DAYS = 180, RECUR_MAX = 200;
+
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tzOffsetMs(ms){
+    var f = new Intl.DateTimeFormat('en-US',{timeZone:TZ,hourCycle:'h23',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    var p = {}; f.formatToParts(new Date(ms)).forEach(function(x){ p[x.type]=x.value; });
+    return Date.UTC(+p.year, +p.month-1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(ms/1000)*1000;
+  }
+  // Instant of 23:59:59.999 Pacific on a YYYY-MM-DD date (DST-aware). Ordering/countdown only.
+  function laEndOfDayMs(dateStr){
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateStr); if(!m) return NaN;
+    var guess = Date.UTC(+m[1], +m[2]-1, +m[3], 23, 59, 59, 999);
+    var t = guess - tzOffsetMs(guess);
+    return guess - tzOffsetMs(t);
+  }
+  function validateICS(text){
+    if (typeof text !== 'string') return {ok:false, reason:'No text received'};
+    var t = text.replace(/^\uFEFF/, '').trim();
+    if (!/^BEGIN:VCALENDAR/i.test(t)) return {ok:false, reason: /^</.test(t) ? 'Received an HTML page, not a calendar' : 'Not an iCalendar file (missing BEGIN:VCALENDAR)'};
+    if (!/END:VCALENDAR\s*$/i.test(t)) return {ok:false, reason:'Calendar file is truncated (missing END:VCALENDAR)'};
+    return {ok:true, text:t};
+  }
+  function splitSummary(summary){
+    var s = String(summary || '').trim();
+    var m = /^(.*?)\s*\[([^\[\]]+)\]\s*$/.exec(s);
+    return m ? {title: m[1] || s, course: m[2].trim()} : {title: s, course: ''};
+  }
+  function plainText(s){
+    return String(s || '').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim().slice(0,2000);
+  }
+  function makeItem(ICAL, ve, source, time, isOverride){
+    if (!time) return null;
+    var uid = String(ve.getFirstPropertyValue('uid') || '');
+    var sp = splitSummary(ve.getFirstPropertyValue('summary'));
+    var item = { source: source, uid: uid, title: sp.title || 'Untitled item', course: sp.course,
+      description: plainText(ve.getFirstPropertyValue('description')), allDay: !!time.isDate };
+    if (time.isDate) {
+      item.date = time.year + '-' + pad(time.month) + '-' + pad(time.day);
+      item.sortMs = laEndOfDayMs(item.date);
+    } else {
+      var ms = time.toJSDate().getTime();
+      if (!isFinite(ms)) return null;
+      item.startMs = ms; item.sortMs = ms;
+    }
+    if (!isFinite(item.sortMs)) return null;
+    item.instance = item.allDay ? item.date : String(item.startMs);
+    item.key = source + '|' + (uid || ('nouid:' + item.title)) + '|' + item.instance;
+    return item;
+  }
+  function parseICS(ICAL, text, source, nowMs){
+    if (!ICAL || typeof ICAL.parse !== 'function') throw new Error('Calendar parser (ical.js) did not load – check your connection');
+    var v = validateICS(text); if (!v.ok) throw new Error(v.reason);
+    var comp;
+    try { comp = new ICAL.Component(ICAL.parse(v.text)); } catch(e){ throw new Error('Calendar could not be parsed: ' + (e && e.message || e)); }
+    var out = [], warnings = {skippedNoDate:0, recurringExpanded:0, recurringTruncated:0, duplicates:0};
+    var from = nowMs - RECUR_PAST_DAYS*864e5, to = nowMs + RECUR_FUTURE_DAYS*864e5;
+    comp.getAllSubcomponents('vevent').forEach(function(ve){
+      var start = null;
+      try { start = ve.getFirstPropertyValue('dtstart'); } catch(e){}
+      if (!start || typeof start.toJSDate !== 'function') { warnings.skippedNoDate++; return; }
+      var isOverride = ve.hasProperty('recurrence-id');
+      if (ve.hasProperty('rrule') && !isOverride) {
+        warnings.recurringExpanded++;
+        var it, ev = new ICAL.Event(ve), n = 0, next;
+        try { it = ev.iterator(); } catch(e){ warnings.skippedNoDate++; return; }
+        while ((next = it.next())) {
+          var ms = next.toJSDate().getTime();
+          if (ms > to) break;
+          if (++n > RECUR_MAX) { warnings.recurringTruncated++; break; }
+          if (ms < from) continue;
+          var r = makeItem(ICAL, ve, source, next, false); if (r) { r.recurring = true; out.push(r); }
+        }
+        return;
+      }
+      var item = makeItem(ICAL, ve, source, isOverride ? (ve.getFirstPropertyValue('dtstart')) : start, isOverride);
+      if (!item) { warnings.skippedNoDate++; return; }
+      if (isOverride) {
+        var rid = ve.getFirstPropertyValue('recurrence-id');
+        var ridInst = rid.isDate ? rid.year+'-'+pad(rid.month)+'-'+pad(rid.day) : String(rid.toJSDate().getTime());
+        item.overrides = source + '|' + (item.uid || ('nouid:' + item.title)) + '|' + ridInst;
+      }
+      out.push(item);
+    });
+    // overrides replace the expanded occurrence they modify
+    var overridden = {}; out.forEach(function(i){ if (i.overrides) overridden[i.overrides] = true; });
+    var seen = {}, events = [];
+    out.forEach(function(i){
+      if (!i.overrides && overridden[i.key]) return;
+      if (seen[i.key]) { warnings.duplicates++; return; }
+      seen[i.key] = true; delete i.overrides; events.push(i);
+    });
+    return {events: events, warnings: warnings};
+  }
+  function upcoming(state, filter, nowMs){
+    var list = [];
+    Object.keys(SOURCES).forEach(function(s){
+      if (filter !== 'all' && filter !== s) return;
+      var st = state.sources[s]; if (!st || !st.events) return;
+      st.events.forEach(function(e){ if (e.sortMs >= nowMs) list.push(e); });
+    });
+    return list.sort(function(a,b){ return a.sortMs - b.sortMs || a.title.localeCompare(b.title); });
+  }
+  function emptyState(){ return {version:CACHE_VERSION, sources:{ hartnell:emptySource(), csumb:emptySource() }}; }
+  function emptySource(){ return {events:null, loadedAt:null, origin:null, lastError:null, lastErrorAt:null, warnings:null}; }
+  function validEvent(e){
+    return e && typeof e === 'object' && typeof e.title === 'string' && typeof e.key === 'string' && isFinite(e.sortMs) &&
+      (e.allDay ? /^\d{4}-\d{2}-\d{2}$/.test(e.date) : isFinite(e.startMs)) && (e.source === 'hartnell' || e.source === 'csumb');
+  }
+  // Load versioned cache; legacy 'merged_canvas_events' is deliberately ignored.
+  function loadCache(storage){
+    var st = emptyState(), note = null;
+    try {
+      var raw = storage && storage.getItem(CACHE_KEY);
+      if (raw) {
+        var c = JSON.parse(raw);
+        if (!c || c.version !== CACHE_VERSION || !c.sources) throw new Error('bad version');
+        Object.keys(SOURCES).forEach(function(s){
+          var src = c.sources[s]; if (!src || !Array.isArray(src.events)) return;
+          var seen = {}, evs = src.events.filter(function(e){ if (!validEvent(e) || e.source !== s || seen[e.key]) return false; seen[e.key]=true; return true; });
+          st.sources[s] = {events:evs, loadedAt: isFinite(src.loadedAt) ? src.loadedAt : null, origin: src.origin === 'url' ? 'url' : 'file', lastError:null, lastErrorAt:null, warnings:src.warnings || null};
+        });
+      }
+      if (storage && storage.getItem(LEGACY_KEY)) note = 'Old-version cache found and ignored (use “Clear saved data” to delete it).';
+    } catch(e){ st = emptyState(); note = 'Saved data was unreadable and was ignored.'; }
+    return {state: st, note: note};
+  }
+  function saveCache(storage, state){
+    try {
+      var c = {version:CACHE_VERSION, sources:{}};
+      Object.keys(SOURCES).forEach(function(s){ var x = state.sources[s];
+        c.sources[s] = x.events ? {events:x.events, loadedAt:x.loadedAt, origin:x.origin, warnings:x.warnings} : null; });
+      storage.setItem(CACHE_KEY, JSON.stringify(c)); return null;   // URLs are never stored
+    } catch(e){ return 'Could not save to browser storage (' + (e && e.name || 'error') + '); data will be lost on reload.'; }
+  }
+  function clearCache(storage){
+    try { storage.removeItem(CACHE_KEY); storage.removeItem(LEGACY_KEY); return null; } catch(e){ return 'Could not clear browser storage.'; }
+  }
+  // Fetch one user-entered URL directly (no proxy) with abort timeout. Never throws.
+  function fetchSource(fetchImpl, url, timeoutMs, ICAL, source, nowMs){
+    if (!/^https:\/\//i.test(url)) return Promise.resolve({ok:false, kind:'input', message:'URL must start with https://'});
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null, timedOut = false;
+    var timer = setTimeout(function(){ timedOut = true; if (ctrl) ctrl.abort(); }, timeoutMs);
+    return Promise.resolve().then(function(){ return fetchImpl(url, {signal: ctrl && ctrl.signal, credentials:'omit', cache:'no-store', referrerPolicy:'no-referrer'}); })
+      .then(function(res){
+        if (!res.ok) return {ok:false, kind:'http', message:'Server returned HTTP ' + res.status};
+        return res.text().then(function(t){
+          try { var p = parseICS(ICAL, t, source, nowMs); return {ok:true, events:p.events, warnings:p.warnings}; }
+          catch(e){ return {ok:false, kind:'parse', message:e.message}; }
+        });
+      }, function(e){
+        if (timedOut) return {ok:false, kind:'timeout', message:'Timed out after ' + Math.round(timeoutMs/1000) + ' s'};
+        return {ok:false, kind:'network', message:'Network or CORS error (browser hides the exact reason)'};
+      })
+      .catch(function(){ return timedOut ? {ok:false, kind:'timeout', message:'Timed out after ' + Math.round(timeoutMs/1000) + ' s'} : {ok:false, kind:'network', message:'Connection failed while reading the response'}; })
+      .then(function(r){ clearTimeout(timer); return r; });
+  }
+  // Apply a result to one source only; failures keep earlier real data (marked stale).
+  function applyResult(state, source, r, origin, nowMs){
+    var s = state.sources[source];
+    if (r.ok) { s.events = r.events; s.loadedAt = nowMs; s.origin = origin; s.lastError = null; s.lastErrorAt = null; s.warnings = r.warnings; }
+    else { s.lastError = (r.kind ? r.kind.toUpperCase() + ': ' : '') + r.message; s.lastErrorAt = nowMs; }
+    return state;
+  }
+  function fmtDate(e){
+    if (e.allDay) { var p = e.date.split('-'); return new Date(Date.UTC(+p[0], +p[1]-1, +p[2], 12)).toLocaleDateString('en-US',{timeZone:'UTC',weekday:'short',month:'short',day:'numeric',year:'numeric'}) + ' (all day, no time given)'; }
+    return new Date(e.startMs).toLocaleString('en-US',{timeZone:TZ,weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
+  }
+  return {TZ:TZ, SOURCES:SOURCES, CACHE_KEY:CACHE_KEY, LEGACY_KEY:LEGACY_KEY, laEndOfDayMs:laEndOfDayMs, validateICS:validateICS, splitSummary:splitSummary,
+    plainText:plainText, parseICS:parseICS, upcoming:upcoming, emptyState:emptyState, loadCache:loadCache, saveCache:saveCache, clearCache:clearCache,
+    fetchSource:fetchSource, applyResult:applyResult, fmtDate:fmtDate};
+})();
+if (typeof module !== 'undefined') module.exports = ALH;
+</script>
+
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var store = null; try { store = window.localStorage; } catch(e){}
+  var loaded = ALH.loadCache(store), state = loaded.state;
+  var filter = 'all', heroEvent = null, selectedKey = null, busy = false, statusExtra = loaded.note || '';
+  function el(tag, cls, text){ var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function nowMs(){ return Date.now(); }
+  function parserReady(){ return typeof window.ICAL !== 'undefined' && typeof ICAL.parse === 'function'; }
+  function setStatus(msg){ $('sync-status').textContent = msg + (statusExtra ? ' · ' + statusExtra : ''); }
+
+  function updateClock(){
+    var d = new Date();
+    $('live-time').textContent = d.toLocaleTimeString('en-US',{timeZone:ALH.TZ,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    $('live-date').textContent = d.toLocaleDateString('en-US',{timeZone:ALH.TZ,weekday:'long',month:'long',day:'numeric',year:'numeric'}) + ' · Pacific';
+  }
+  function setDigits(d,h,m,s){ $('hero-days').textContent=d; $('hero-hours').textContent=h; $('hero-mins').textContent=m; $('hero-secs').textContent=s; }
+  function tick(){
+    updateClock();
+    if (heroEvent && heroEvent.sortMs < nowMs()) { render(); return; }   // expired: advance
+    if (!heroEvent) return;
+    var diff = heroEvent.sortMs - nowMs(), p2 = function(n){ return String(n).padStart(2,'0'); };
+    setDigits(p2(Math.floor(diff/864e5)), p2(Math.floor(diff%864e5/36e5)), p2(Math.floor(diff%36e5/6e4)), p2(Math.floor(diff%6e4/1e3)));
+  }
+  function sourceLabel(e){ return ALH.SOURCES[e.source]; }
+  function isStale(src){ return !!(state.sources[src].events && state.sources[src].lastError); }
+
+  function renderSources(){
+    var wrap = $('source-panels'); wrap.textContent = '';
+    Object.keys(ALH.SOURCES).forEach(function(s){
+      var x = state.sources[s], box = el('div', 'glass src' + (x.lastError ? ' err' : ''));
+      var h = el('h3'); h.appendChild(el('span', 'badge ' + s, ALH.SOURCES[s])); box.appendChild(h);
+      var lines = [];
+      if (!x.events) lines.push('Not loaded.');
+      else {
+        var up = x.events.filter(function(e){ return e.sortMs >= nowMs(); }).length;
+        lines.push(x.events.length === 0 ? 'Loaded a valid calendar with 0 events.' : up + ' upcoming of ' + x.events.length + ' events.');
+        lines.push('Loaded ' + new Date(x.loadedAt).toLocaleString('en-US',{timeZone:ALH.TZ}) + ' from ' + (x.origin === 'url' ? 'direct URL' : 'uploaded file') + '.');
+        var w = x.warnings || {};
+        if (w.skippedNoDate) lines.push(w.skippedNoDate + ' event(s) skipped: no valid date.');
+        if (w.duplicates) lines.push(w.duplicates + ' duplicate(s) removed.');
+        if (w.recurringExpanded) lines.push(w.recurringExpanded + ' repeating event(s) expanded for the next 180 days' + (w.recurringTruncated ? ' (some truncated at 200)' : '') + '.');
+      }
+      if (x.lastError) lines.push('Last attempt FAILED ' + new Date(x.lastErrorAt).toLocaleTimeString('en-US',{timeZone:ALH.TZ}) + ': ' + x.lastError + (x.events ? ' — showing earlier data (STALE).' : ''));
+      lines.forEach(function(l){ box.appendChild(el('p','tiny muted',l)); });
+      var row = el('div','actions'); row.style.justifyContent = 'flex-start';
+      var rep = el('button','btn alt', x.events ? 'Replace ' + ALH.SOURCES[s] + ' file' : 'Upload ' + ALH.SOURCES[s] + ' file'); rep.type='button';
+      rep.onclick = function(){ $('file-' + s).click(); };
+      row.appendChild(rep);
+      if (x.events || x.lastError) { var rm = el('button','btn danger','Remove ' + ALH.SOURCES[s]); rm.type='button';
+        rm.onclick = function(){ state.sources[s] = ALH.emptyState().sources[s]; if (selectedKey && selectedKey.indexOf(s+'|')===0) selectedKey=null; persist(); render(); setStatus(ALH.SOURCES[s] + ' removed; other campus kept.'); };
+        row.appendChild(rm); }
+      box.appendChild(row); wrap.appendChild(box);
+    });
+  }
+
+  function showDetail(e){
+    var d = $('detail'); d.textContent = '';
+    if (!e) { d.hidden = true; return; }
+    d.hidden = false;
+    d.appendChild(el('h3', null, e.title));
+    [['Campus', sourceLabel(e) + (isStale(e.source) ? ' (stale data)' : '')], ['Course', e.course || '—'], ['Date', ALH.fmtDate(e)],
+     ['Repeating', e.recurring ? 'Yes (expanded occurrence)' : 'No'], ['Description', e.description || '—']].forEach(function(p){
+      var para = el('p','small'); para.appendChild(el('strong', null, p[0] + ': ')); para.appendChild(document.createTextNode(p[1])); d.appendChild(para); });
+    var c = el('button','btn alt','Close details'); c.type='button'; c.onclick = function(){ selectedKey=null; render(); }; d.appendChild(c);
+  }
+
+  function render(){
+    var list = ALH.upcoming(state, filter, nowMs());
+    heroEvent = list[0] || null;
+    var anyLoaded = state.sources.hartnell.events || state.sources.csumb.events;
+    var hc = $('hero-campus');
+    if (!heroEvent) {
+      hc.className = 'badge'; hc.textContent = anyLoaded ? 'All clear' : 'No data';
+      $('hero-title').textContent = anyLoaded ? 'No upcoming items' + (filter !== 'all' ? ' for ' + ALH.SOURCES[filter] : '') : 'No calendar data loaded';
+      $('hero-course').textContent = anyLoaded ? 'Nothing due from the loaded calendar(s).' : 'Upload your Hartnell and CSUMB .ics files under “Manage ICS Sources”.';
+      $('hero-note').textContent = ''; $('hero-sr').textContent = ''; setDigits('--','--','--','--');
+    } else {
+      hc.className = 'badge ' + heroEvent.source + (isStale(heroEvent.source) ? ' stale' : '');
+      hc.textContent = sourceLabel(heroEvent) + (isStale(heroEvent.source) ? ' · stale' : '');
+      $('hero-title').textContent = heroEvent.title;
+      $('hero-course').textContent = (heroEvent.course ? heroEvent.course + ' • ' : '') + ALH.fmtDate(heroEvent);
+      $('hero-note').textContent = heroEvent.allDay ? 'Countdown runs to 11:59 PM Pacific on this date; the feed gives no due time.' : 'Countdown to the event time.';
+      $('hero-sr').textContent = 'Next item: ' + heroEvent.title + ', ' + ALH.fmtDate(heroEvent);
+    }
+    var grid = $('events-grid'); grid.textContent = '';
+    list.forEach(function(e){
+      var li = el('li'), b = el('button','glass card'); b.type = 'button';
+      if (e === heroEvent) b.setAttribute('aria-description','Shown in countdown');
+      b.setAttribute('aria-current', String(e.key === selectedKey));
+      var row = el('div','row'); row.appendChild(el('span','badge ' + e.source + (isStale(e.source) ? ' stale' : ''), sourceLabel(e) + (isStale(e.source) ? ' · stale' : '')));
+      row.appendChild(el('span','tiny muted', e.allDay ? e.date + ' · all day' : new Date(e.startMs).toLocaleString('en-US',{timeZone:ALH.TZ,month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})));
+      b.appendChild(row); b.appendChild(el('h3', null, (e === heroEvent ? '⏱ ' : '') + e.title)); b.appendChild(el('p','tiny muted', e.course || '—'));
+      b.onclick = function(){ selectedKey = e.key; render(); $('detail').focus && $('detail').setAttribute('tabindex','-1'); $('detail').focus(); };
+      li.appendChild(b); grid.appendChild(li);
+    });
+    if (!list.length) grid.appendChild(el('li','small muted', anyLoaded ? 'No upcoming items for this filter.' : 'No calendars loaded.'));
+    var name = filter === 'all' ? 'all campuses' : ALH.SOURCES[filter];
+    $('count-line').textContent = list.length + ' upcoming item' + (list.length === 1 ? '' : 's') + ' (' + name + ', including the countdown item).';
+    var sel = null; list.forEach(function(e){ if (e.key === selectedKey) sel = e; });
+    if (!sel) selectedKey = null; showDetail(sel);
+    renderSources(); tick();
+  }
+  function persist(){ if (!store) { statusExtra = 'Browser storage unavailable; data is not saved.'; return; } var err = ALH.saveCache(store, state); if (err) statusExtra = err; }
+
+  function loadFile(source, file){
+    if (!file) return;
+    if (!parserReady()) { ALH.applyResult(state, source, {ok:false, kind:'parser', message:'ical.js did not load (offline or blocked)'}, 'file', nowMs()); render(); setStatus('Parser unavailable.'); return; }
+    file.text().then(function(t){
+      var r; try { var p = ALH.parseICS(ICAL, t, source, nowMs()); r = {ok:true, events:p.events, warnings:p.warnings}; } catch(e){ r = {ok:false, kind:'parse', message:e.message}; }
+      ALH.applyResult(state, source, r, 'file', nowMs()); persist(); render();
+      setStatus(r.ok ? ALH.SOURCES[source] + ' file loaded (' + r.events.length + ' events); other campus unchanged.' : ALH.SOURCES[source] + ' file rejected: ' + r.message);
+    }, function(){ ALH.applyResult(state, source, {ok:false, kind:'file', message:'Could not read the file'}, 'file', nowMs()); render(); });
+  }
+  ['hartnell','csumb'].forEach(function(s){ $('file-' + s).addEventListener('change', function(e){ loadFile(s, e.target.files[0]); e.target.value = ''; }); });
+
+  $('sync-urls').addEventListener('click', function(){
+    if (busy) return;
+    var jobs = ['hartnell','csumb'].map(function(s){ return {s:s, url:$('url-' + s).value.trim()}; }).filter(function(j){ return j.url; });
+    if (!jobs.length) { setStatus('No URL entered; nothing fetched.'); return; }
+    if (!parserReady()) { setStatus('Parser (ical.js) not loaded; cannot sync.'); return; }
+    busy = true; $('sync-urls').disabled = true; setStatus('Fetching ' + jobs.map(function(j){ return ALH.SOURCES[j.s]; }).join(' & ') + '…');
+    Promise.allSettled(jobs.map(function(j){ return ALH.fetchSource(fetch.bind(window), j.url, 15000, ICAL, j.s, nowMs()); }))
+      .then(function(results){
+        var msgs = results.map(function(r, i){ var v = r.status === 'fulfilled' ? r.value : {ok:false, kind:'error', message:String(r.reason)};
+          ALH.applyResult(state, jobs[i].s, v, 'url', nowMs()); return ALH.SOURCES[jobs[i].s] + ': ' + (v.ok ? 'OK (' + v.events.length + ')' : 'FAILED – ' + v.message); });
+        persist(); setStatus(msgs.join(' · '));
+      }).finally(function(){ busy = false; $('sync-urls').disabled = false; render(); });
+  });
+
+  document.querySelectorAll('[data-filter]').forEach(function(b){ b.addEventListener('click', function(){
+    filter = b.getAttribute('data-filter');
+    document.querySelectorAll('[data-filter]').forEach(function(x){ x.setAttribute('aria-pressed', String(x === b)); });
+    render(); }); });
+  $('clear-data').addEventListener('click', function(){
+    if (!confirm('Delete all saved calendar data from this browser?')) return;
+    var err = store ? ALH.clearCache(store) : null; state = ALH.emptyState(); selectedKey = null; statusExtra = err || ''; render(); setStatus('Saved data cleared.'); });
+  var dlg = $('config-modal'), opener = $('open-modal');
+  function closeDlg(){ if (dlg.open) dlg.close(); }
+  opener.addEventListener('click', function(){ if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open',''); $('file-hartnell').focus(); });
+  dlg.addEventListener('close', function(){ ['url-hartnell','url-csumb'].forEach(function(id){ $(id).value=''; }); opener.focus(); }); // URLs not kept
+  $('close-x').onclick = closeDlg; $('cancel').onclick = closeDlg;
+
+  setInterval(tick, 1000);
+  render();
+  var counts = ['hartnell','csumb'].filter(function(s){ return state.sources[s].events; });
+  setStatus(!parserReady() ? 'Calendar parser failed to load (offline?). Saved data shown; uploads disabled until reload.' :
+    counts.length ? 'Saved data loaded for ' + counts.map(function(s){ return ALH.SOURCES[s]; }).join(' & ') + ' (no automatic network sync).' : 'No saved data. Upload your .ics files to begin.');
+})();
+</script>
+</body>
+</html>
