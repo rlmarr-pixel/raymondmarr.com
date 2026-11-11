@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'; script-src 'sha256-YsikP0ELD9XMFX9pECXLm5nlswE2UL50ixu5jla/AdI=' 'sha256-M5hcCKNzrRohsiPqLZrIUmcKlLxcxhdgKTthmRXYvyc=' 'sha256-ElQB2Py06vHO1FnyawnS2Kvbj2FV+rj+82PbcsDQmnM='; style-src 'sha256-P2ImzpH/773whiCGdhKASyzQB4RMmY95OXJLzOAnJuE='; img-src data:; connect-src https:">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; object-src 'none'; frame-src 'none'; worker-src 'none'; form-action 'none'; script-src 'sha256-YsikP0ELD9XMFX9pECXLm5nlswE2UL50ixu5jla/AdI=' 'sha256-vYK6X7urYOHAo8ff9+mhimhyuLc/1ubSX1A5ZqNdkLw=' 'sha256-vKqxTB22n6O/lfJTJJQ0jgr20pFOahJox3Ri4PrvJdM='; style-src 'sha256-XAI58Uefc2xe4oQUsJWMXb1pxAUlJ8g4xmecaT1YalQ='; img-src data:; connect-src https:">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dual-Campus Canvas Lock Screen &amp; Dashboard</title>
@@ -108,6 +108,17 @@ input[type=url],input[type=file]{width:100%;font:inherit;font-size:.8rem;color:#
 .retention legend{font-size:.75rem;font-weight:700;text-transform:uppercase;color:#cbd5e1;padding:0 .25rem}
 .choice{display:flex;align-items:flex-start;gap:.5rem;text-transform:none;font-weight:600;letter-spacing:0;color:#f8fafc;margin:.55rem 0 .15rem}
 .choice input{width:auto;margin-top:.15rem}
+.schedule{margin-top:2.5rem}
+.schedule h2{margin:0 0 .35rem}
+.term{margin:1.25rem 0}
+.term-head{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.35rem}
+.term-head h3{margin:0;font-size:1.05rem}
+.sched-grid{display:grid;gap:.75rem}
+@media(min-width:768px){.sched-grid{grid-template-columns:1fr 1fr}}
+.sched-card{padding:1rem}
+.sched-card h4{margin:.45rem 0 .25rem;font-size:1rem}
+.sched-card[aria-current="true"]{border-color:#a5b4fc;box-shadow:inset 0 0 0 1px #a5b4fc}
+.sched-note{color:#fde68a;margin:.5rem 0 0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 body[data-subject="math"] .motif{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2080%2080%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M8%2016h64M8%2032h64M8%2048h64M8%2064h64M16%208v64M32%208v64M48%208v64M64%208v64%27%2F%3E%3Ccircle%20cx%3D%2740%27%20cy%3D%2740%27%20r%3D%2712%27%2F%3E%3C%2Fsvg%3E")}
 body[data-subject="writing"] .motif{background-image:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2080%2080%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-width%3D%272%27%3E%3Cpath%20d%3D%27M14%2018h52M14%2032h40M14%2046h52M14%2060h28%27%2F%3E%3Cpath%20d%3D%27M58%2050l8%208-16%204%208-12z%27%20fill%3D%27white%27%20stroke%3D%27none%27%2F%3E%3C%2Fsvg%3E")}
@@ -184,7 +195,12 @@ body[data-preview-subject="general"] .motif{background-image:url("data:image/svg
  <p id="count-line" class="small muted"></p>
  <section id="detail" class="glass detail" hidden aria-live="polite" aria-label="Selected event details"></section>
  <ul id="events-grid" class="grid" aria-labelledby="list-heading"></ul>
- <p class="tiny muted footnote">All-day Canvas items have no due time in the feed; they are shown as date-only and kept “upcoming” until 11:59 PM Pacific on that date (countdown target only). Times shown in America/Los_Angeles. Course filters use the bracketed code parsed from each title. Subject artwork is decorative. Calendar text is shown as text, not as HTML or live links.</p>
+ <section class="schedule" id="schedule" aria-labelledby="schedule-heading">
+  <h2 id="schedule-heading">Course schedule</h2>
+  <p class="tiny muted">Public class list for the year. It does not come from uploaded calendar files, and it does not add deadlines to the countdown.</p>
+  <div id="schedule-terms"></div>
+ </section>
+ <p class="tiny muted footnote">All-day Canvas items have no due time in the feed; they are shown as date-only and kept “upcoming” until 11:59 PM Pacific on that date (countdown target only). Times shown in America/Los_Angeles. Course filters include this public schedule plus any bracketed code parsed from an uploaded calendar. Subject artwork is decorative. Calendar text is shown as text, not as HTML or live links.</p>
 </div>
 
 <dialog id="config-modal" aria-labelledby="modal-title">
@@ -229,11 +245,11 @@ var ALH = (function(){
   var SOURCES = { hartnell:'Hartnell', csumb:'CSUMB' };
   var RECUR_PAST_DAYS = 1, RECUR_FUTURE_DAYS = 180, RECUR_MAX = 200;
   var SUBJECTS = {
-    MATH:'math', STAT:'math', MTH:'math',
+    MATH:'math', MAT:'math', STAT:'math', MTH:'math',
     ENG:'writing', ENGL:'writing', LIT:'writing', WRT:'writing', ESL:'writing',
     BIO:'bio', BIOL:'bio',
     CHEM:'chem', CHM:'chem',
-    CS:'computing', CST:'computing', CIS:'computing', COMP:'computing', CSE:'computing',
+    CS:'computing', CSS:'computing', CST:'computing', CIS:'computing', COMP:'computing', CSE:'computing',
     HIST:'history', HIS:'history',
     ART:'art', ARTS:'art',
     PHYS:'physics', PHY:'physics',
@@ -350,6 +366,30 @@ var ALH = (function(){
     });
     return list.sort(function(a,b){ return a.sortMs - b.sortMs || a.title.localeCompare(b.title); });
   }
+  // Public class list. Independent of uploaded calendars. Status labels are the approved labels, not inferred from the clock.
+  var CATALOG = [
+    {name:'Fall 2026', when:'current', summary:'Hartnell semester ends Dec 12.', courses:[
+      {code:'CSS-2A', title:'C++ Programming', campus:'hartnell', meeting:'Online', deadlines:'Canvas deadlines'},
+      {code:'ENGL C1001', title:'English Composition (includes Critical Thinking)', campus:'hartnell', meeting:'Online', deadlines:'Canvas deadlines'},
+      {code:'MAT-3A', title:'Calculus I', campus:'hartnell', place:'Alisal campus', meeting:'In person, Tue/Thu', deadlines:'Announcements only', note:'Deadlines are posted as Canvas announcements, so they won\'t appear in the countdown.'},
+      {code:'CST 286', title:'Physics of Computing', campus:'csumb', meeting:'Mon on Zoom, Wed in person 2:00–2:50 PM', deadlines:'Canvas deadlines'}
+    ]},
+    {name:'Early Spring 2027', when:'upcoming', courses:[
+      {code:'BIO-42', title:'Human Biology', campus:'hartnell', credits:'3 credits', dates:'Jan 4 to Feb 27, 2027', deadlines:'Canvas use TBD'},
+      {title:'Second early-start class', value:'TBD'}
+    ]},
+    {name:'Spring 2027', when:'upcoming', summary:'Hartnell from Jan 25. 14 credits total, including BIO-42.', courses:[
+      {code:'CSS-7', title:'Discrete Structures', campus:'hartnell'},
+      {code:'CSS-2B', title:'Data Structures and Algorithms', campus:'hartnell'},
+      {code:'POLS-C1000', title:'American Government and Politics', campus:'hartnell', flag:'Waitlisted'},
+      {title:'CSUMB spring classes', campus:'csumb', value:'TBD'}
+    ]}
+  ];
+  function catalogCourse(code){
+    var found = null;
+    CATALOG.forEach(function(term){ term.courses.forEach(function(c){ if (c.code && c.code === code) found = c; }); });
+    return found;
+  }
   function courseOptions(state, campusFilter, nowMs){
     var list = upcoming(state, campusFilter, nowMs, 'all');
     var seen = {}, codes = [], none = false;
@@ -357,6 +397,13 @@ var ALH = (function(){
       var c = courseCode(e);
       if (!c) { none = true; return; }
       if (!seen[c]) { seen[c] = true; codes.push(c); }
+    });
+    CATALOG.forEach(function(term){
+      term.courses.forEach(function(c){
+        if (!c.code || seen[c.code]) return;
+        if (campusFilter !== 'all' && c.campus && c.campus !== campusFilter) return;
+        seen[c.code] = true; codes.push(c.code);
+      });
     });
     codes.sort(function(a,b){ return a.localeCompare(b); });
     return {codes: codes, none: none};
@@ -432,7 +479,7 @@ var ALH = (function(){
     return new Date(e.startMs).toLocaleString('en-US',{timeZone:TZ,weekday:'short',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
   }
   return {TZ:TZ, SOURCES:SOURCES, CACHE_KEY:CACHE_KEY, LEGACY_KEY:LEGACY_KEY, laEndOfDayMs:laEndOfDayMs, validateICS:validateICS, splitSummary:splitSummary,
-    courseCode:courseCode, subjectKey:subjectKey, courseOptions:courseOptions, plainText:plainText, parseICS:parseICS, upcoming:upcoming, emptyState:emptyState,
+    courseCode:courseCode, subjectKey:subjectKey, courseOptions:courseOptions, CATALOG:CATALOG, catalogCourse:catalogCourse, plainText:plainText, parseICS:parseICS, upcoming:upcoming, emptyState:emptyState,
     loadCache:loadCache, saveCache:saveCache, clearCache:clearCache, readRetention:readRetention, writeRetention:writeRetention,
     fetchSource:fetchSource, applyResult:applyResult, fmtDate:fmtDate};
 })();
@@ -485,7 +532,8 @@ if (typeof module !== 'undefined') module.exports = ALH;
     node.addEventListener('focusout', function(ev){ if (!node.contains(ev.relatedTarget)) clearPreview(); });
   }
   function applyStableTheme(){
-    var campus = filter !== 'all' ? filter : (heroEvent ? heroEvent.source : 'all');
+    var cat = courseFilter && courseFilter !== 'all' ? ALH.catalogCourse(courseFilter) : null;
+    var campus = filter !== 'all' ? filter : (heroEvent ? heroEvent.source : (cat && cat.campus ? cat.campus : 'all'));
     var subject = 'general';
     if (courseFilter !== 'all') subject = courseFilter ? ALH.subjectKey(courseFilter) : 'general';
     else if (heroEvent) subject = ALH.subjectKey(heroEvent.course);
@@ -622,12 +670,26 @@ if (typeof module !== 'undefined') module.exports = ALH;
     var hc = $('hero-campus'), courseBadge = $('hero-course-badge'), stateBadge = $('hero-state-badge');
     $('hero').setAttribute('data-pinned', String(!!pinnedEvent));
     if (!heroEvent) {
-      hc.className = 'badge'; hc.textContent = anyLoaded ? 'All clear' : 'No data';
+      var emptyCat = courseFilter && courseFilter !== 'all' ? ALH.catalogCourse(courseFilter) : null;
       courseBadge.hidden = true; courseBadge.textContent = '';
       stateBadge.hidden = true; stateBadge.textContent = '';
-      $('hero-title').textContent = anyLoaded ? 'No upcoming items' + scopePhrase() : 'No calendar data loaded';
-      $('hero-course').textContent = anyLoaded ? 'Nothing due from the loaded calendar(s).' : 'Upload your Hartnell and CSUMB .ics files under “Manage calendars in this browser”.';
-      $('hero-note').textContent = ''; $('hero-sr').textContent = ''; setDigits('--','--','--','--');
+      if (emptyCat) {
+        hc.className = 'badge' + (emptyCat.campus ? ' ' + emptyCat.campus : '');
+        hc.textContent = emptyCat.campus && ALH.SOURCES[emptyCat.campus] ? ALH.SOURCES[emptyCat.campus] : 'No events';
+        courseBadge.hidden = false;
+        courseBadge.textContent = emptyCat.code;
+        courseBadge.className = 'badge course subject-' + ALH.subjectKey(emptyCat.code);
+        $('hero-title').textContent = 'No upcoming items for ' + emptyCat.code;
+        $('hero-course').textContent = emptyCat.title;
+        $('hero-note').textContent = emptyCat.note || 'No uploaded calendar items for this class.';
+        $('hero-sr').textContent = 'No upcoming items for ' + emptyCat.code + '. ' + $('hero-note').textContent;
+      } else {
+        hc.className = 'badge'; hc.textContent = anyLoaded ? 'All clear' : 'No data';
+        $('hero-title').textContent = anyLoaded ? 'No upcoming items' + scopePhrase() : 'No calendar data loaded';
+        $('hero-course').textContent = anyLoaded ? 'Nothing due from the loaded calendar(s).' : 'Upload your Hartnell and CSUMB .ics files under “Manage calendars in this browser”.';
+        $('hero-note').textContent = ''; $('hero-sr').textContent = '';
+      }
+      setDigits('--','--','--','--');
     } else {
       hc.className = 'badge ' + heroEvent.source + (isStale(heroEvent.source) ? ' stale' : '');
       hc.textContent = sourceLabel(heroEvent) + (isStale(heroEvent.source) ? ' · stale' : '');
@@ -677,7 +739,11 @@ if (typeof module !== 'undefined') module.exports = ALH;
       bindPreview(article, {subject: ALH.subjectKey(e.course), campus: e.source});
       li.appendChild(article); grid.appendChild(li);
     });
-    if (!list.length) grid.appendChild(el('li','small muted', anyLoaded ? 'No upcoming items for this filter.' : 'No calendars loaded.'));
+    if (!list.length) {
+      var emptyListed = courseFilter && courseFilter !== 'all' ? ALH.catalogCourse(courseFilter) : null;
+      var emptyText = emptyListed ? (emptyListed.note || 'No uploaded calendar items for ' + emptyListed.code + '.') : (anyLoaded ? 'No upcoming items for this filter.' : 'No calendars loaded.');
+      grid.appendChild(el('li','small muted', emptyText));
+    }
     var campusName = filter === 'all' ? 'all campuses' : ALH.SOURCES[filter];
     var courseName = courseFilter === 'all' ? 'all courses' : (courseFilter ? courseFilter : 'no course code');
     $('count-line').textContent = list.length + ' upcoming item' + (list.length === 1 ? '' : 's') + ' (' + campusName + ', ' + courseName + ', including the countdown item).';
@@ -686,10 +752,56 @@ if (typeof module !== 'undefined') module.exports = ALH;
     if (!sel) selectedKey = null;
     showDetail(sel);
     renderCourseFilters(opts);
+    renderSchedule();
     renderSources();
     applyStableTheme();
     syncRetentionUi();
     tick();
+  }
+  function addScheduleLine(parent, label, value){
+    if (!value) return;
+    var p = el('p','small');
+    p.appendChild(el('strong', null, label + ': '));
+    p.appendChild(document.createTextNode(value));
+    parent.appendChild(p);
+  }
+  function renderSchedule(){
+    var root = $('schedule-terms');
+    if (!root) return;
+    root.textContent = '';
+    ALH.CATALOG.forEach(function(term){
+      var block = el('section','term');
+      block.setAttribute('aria-label', term.name);
+      var head = el('div','term-head');
+      head.appendChild(el('h3', null, term.name));
+      head.appendChild(el('span', 'badge' + (term.when === 'current' ? ' pin' : ''), term.when === 'current' ? 'Current' : 'Upcoming'));
+      block.appendChild(head);
+      if (term.summary) block.appendChild(el('p','tiny muted', term.summary));
+      var grid = el('div','sched-grid');
+      term.courses.forEach(function(c){
+        var card = el('article','glass sched-card');
+        if (c.code) {
+          card.setAttribute('data-code', c.code);
+          card.setAttribute('aria-current', String(courseFilter === c.code));
+        }
+        var badges = el('div','badge-row');
+        if (c.campus && ALH.SOURCES[c.campus]) badges.appendChild(el('span','badge ' + c.campus, ALH.SOURCES[c.campus]));
+        if (c.code) badges.appendChild(el('span','badge course subject-' + ALH.subjectKey(c.code), c.code));
+        if (c.flag) badges.appendChild(el('span','badge pin', c.flag));
+        if (badges.childNodes.length) card.appendChild(badges);
+        card.appendChild(el('h4', null, c.title));
+        if (!c.code && c.value) addScheduleLine(card, 'Class', c.value);
+        addScheduleLine(card, 'Meets', c.meeting);
+        addScheduleLine(card, 'Place', c.place);
+        addScheduleLine(card, 'Dates', c.dates);
+        addScheduleLine(card, 'Credits', c.credits);
+        addScheduleLine(card, 'Deadlines', c.deadlines);
+        if (c.note) card.appendChild(el('p','small sched-note', c.note));
+        grid.appendChild(card);
+      });
+      block.appendChild(grid);
+      root.appendChild(block);
+    });
   }
   function syncRetentionUi(){
     var browserMode = retention !== 'session';
