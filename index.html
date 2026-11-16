@@ -1,9 +1,94 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Raymond Marr</title><meta name="description" content="Raymond Marr — raymondmarr.com">
-<link rel="stylesheet" href="styles.css"><style>:root{--accent:#7a3e1d;--bg:#fbf8f4}</style></head>
-<body><a class="skip" href="#main">Skip to content</a>
-<header><a class="brand" href="/">Raymond Marr</a><nav aria-label="Sections"><a href="#about">About</a><a href="#ventures">Ventures</a><a href="#writing">Writing</a><a href="#contact">Contact</a></nav></header>
-<main id="main"><div class="hero"><p class="eyebrow">Personal hub</p><h1>Raymond Marr</h1><p class="lede">A home base for my work, writing, and the ventures connected to it. <span class="todo">[Tagline to be written]</span></p></div>
-<section id="about" aria-labelledby="about-h"><h2 id="about-h">About</h2><p><span class="todo">[Short introduction to be written by Raymond]</span></p></section><section id="ventures" aria-labelledby="ventures-h"><h2 id="ventures-h">Ventures</h2><div class="grid"><div class="card"><h3>Ronan Miles Technology</h3><p>Systems, automation, and documentation.</p><a href="https://ronanmiles.tech">ronanmiles.tech</a></div><div class="card"><h3>Ronan Miles Help</h3><p>Technical help and guidance.</p><a href="https://ronanmiles.help">ronanmiles.help</a></div><div class="card"><h3>HoK International</h3><p>The broader House of Knatchwa organization.</p><a href="https://hok-international.net">hok-international.net</a></div></div></section><section id="writing" aria-labelledby="writing-h"><h2 id="writing-h">Writing</h2><p>Essays and notes on the <a href="https://blog.raymondmarr.com">Thought Child blog</a>.</p></section><section id="contact" aria-labelledby="contact-h"><h2 id="contact-h">Contact</h2><p><span class="todo">[Contact email to be added]</span></p></section></main>
-<footer><p>&copy; 2026 Raymond Marr · raymondmarr.com</p></footer></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Raymond Marr</title>
+  <meta name="description" content="Raymond Marr — a personal front door to writing, study, Toastmasters, and Ronan Miles Tech.">
+  <link rel="stylesheet" href="home.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header>
+    <a class="brand" href="/">Raymond Marr</a>
+    <nav aria-label="Primary">
+      <a href="#about">About</a>
+      <a href="#work">Work</a>
+      <a href="#writing">Writing</a>
+      <a href="#speaking">Speaking</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <div class="intro">
+      <section class="hero" aria-labelledby="site-title">
+        <p class="eyebrow">Personal site</p>
+        <h1 id="site-title">Raymond Marr</h1>
+        <p class="lede">A front door to my writing, study, speaking, and work.</p>
+      </section>
+
+      <section id="about" aria-labelledby="about-heading">
+        <h2 id="about-heading">About</h2>
+        <p>I have been working with computers since the early 1980s — over four decades of hands-on experience. I am now studying computer science in the CSin3 program at Hartnell College and California State University, Monterey Bay (CSUMB), and I am a Toastmasters speaker. This site points to that work and to the public projects connected to it.</p>
+      </section>
+    </div>
+
+    <section id="focus" aria-labelledby="focus-heading">
+      <h2 id="focus-heading">Focus</h2>
+      <p class="section-lede">Places this site points to, and a few that are still on the way.</p>
+
+      <div class="grid">
+        <article class="card" id="work">
+          <p class="kicker">Ronan Miles Group</p>
+          <h3><a href="https://ronanmiles.tech">Ronan Miles Tech</a></h3>
+          <p>The public business front for scheduled local IT support, for homes and small businesses.</p>
+          <p class="meta">ronanmiles.tech</p>
+        </article>
+
+        <article class="card">
+          <p class="kicker">Ronan Miles Group</p>
+          <h3><a href="https://ronanmiles.help">Ronan Miles Help</a></h3>
+          <p>Practical guidance, workshops, and plain-language technical help.</p>
+          <p class="meta">ronanmiles.help</p>
+        </article>
+
+        <article class="card" id="writing">
+          <p class="kicker">Writing</p>
+          <h3>Essays and a series</h3>
+          <ul class="link-list">
+            <li>
+              <a href="https://betweenworkandwonder.blogspot.com">Between Work and Wonder</a>
+              <p>Reflections on learning, technology, writing, and everyday experience.</p>
+            </li>
+            <li>
+              <a href="https://focus-fwd.blogspot.com">Focus Forward</a>
+              <p>A writing series on living with intention and looking ahead.</p>
+            </li>
+          </ul>
+        </article>
+
+        <article class="card is-pending" id="speaking">
+          <p class="kicker">Speaking</p>
+          <h3>Toastmasters</h3>
+          <p>I speak with Toastmasters. A personal workspace for meetings and speech prep is coming soon.</p>
+          <p class="meta"><span class="badge">Coming soon</span> tm.raymondmarr.com</p>
+        </article>
+
+        <article class="card is-pending">
+          <p class="kicker">Notes</p>
+          <h3>Tech blog</h3>
+          <p>A static site for technical notes and writing, coming soon.</p>
+          <p class="meta"><span class="badge">Coming soon</span> tech.raymondmarr.com</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2026 Raymond Marr</p>
+  </footer>
+</body>
+</html>
